@@ -1,0 +1,80 @@
+services:
+  mysql:
+    restart: always
+    image: mysql/mysql-server:8.0
+    container_name: aio_mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - aio-network
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+  minio:
+    restart: always
+    image: minio/minio:latest
+    container_name: aio_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - aio-network
+    command: server /data --console-address ':9001' --address ':9000'
+    environment:
+      - MINIO_ROOT_USER=${AWS_ACCESS_KEY_ID}
+      - MINIO_ROOT_PASSWORD=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ./minio_data:/data
+
+  mc:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    container_name: aio_minio_mc
+    networks:
+      - aio-network
+    env_file:
+      - .env
+    entrypoint: >
+      /bin/sh -c "
+      /tmp/wait-for-it.sh minio:9000 &&
+      /usr/bin/mc alias set minio http://minio:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} &&
+      /usr/bin/mc mb minio/mlflow;
+      exit 0;
+      "
+    volumes:
+      - ./wait-for-it.sh:/tmp/wait-for-it.sh
+
+  mlflow_server:
+    restart: always
+    build: ./mlflow
+    image: mlflow_server
+    container_name: mlflow_server
+    depends_on:
+      - mysql
+      - minio
+    ports:
+      - "5000:5000"
+    networks:
+      - aio-network
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    command: >
+      mlflow server
+      --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE} 
+      --default-artifact-root s3://mlflow/ 
+      --host 0.0.0.0
+      --port 5000
+      --allowed-hosts="*"
+      --cors-allowed-origins="*"
+
+networks:
+  aio-network:
+    external: true
