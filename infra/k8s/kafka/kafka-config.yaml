@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-config
+  namespace: mlops
+data:
+  CLUSTER_ID: "1"
+  KAFKA_PROCESS_ROLES: "controller,broker"
+  KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-0.kafka-headless.mlops.svc.cluster.local:9093,2@kafka-1.kafka-headless.mlops.svc.cluster.local:9093,3@kafka-2.kafka-headless.mlops.svc.cluster.local:9093"
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT"
+  KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+  KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"

@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-webserver
+  namespace: mlops
+  labels:
+    app: airflow-webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-webserver
+  template:
+    metadata:
+      labels:
+        app: airflow-webserver
+    spec:
+      serviceAccountName: airflow
+      initContainers:
+      - name: wait-for-db
+        image: postgres:15-alpine
+        command:
+        - sh
+        - -c
+        - |
+          until pg_isready -h airflow-postgres -U airflow; do
+            echo "Waiting for database..."
+            sleep 2
+          done
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: airflow-secret
+              key: POSTGRES_PASSWORD
+      - name: init-passwords
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          cp /tmp/passwords-ro/simple_auth_manager_passwords.json.generated /opt/airflow/simple_auth_manager_passwords.json.generated
+          chmod 666 /opt/airflow/simple_auth_manager_passwords.json.generated
+        volumeMounts:
+        - name: passwords-ro
+          mountPath: /tmp/passwords-ro
+        - name: passwords-rw
+          mountPath: /opt/airflow
+      - name: init-db
+        image: localhost:5000/airflow-mlops:3.1.5-custom
+        command:
+        - bash
+        - -c
+        - |
+          airflow db migrate
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secret
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          value: "postgresql+psycopg2://airflow:airflow123@airflow-postgres:5432/airflow"
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+      containers:
+      - name: webserver
+        image: localhost:5000/airflow-mlops:3.1.5-custom
+        command: ["airflow", "api-server"]
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        - secretRef:
+            name: airflow-secret
+        env:
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          value: "postgresql+psycopg2://airflow:airflow123@airflow-postgres:5432/airflow"
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+        - name: passwords-rw
+          mountPath: /opt/airflow/simple_auth_manager_passwords.json.generated
+          subPath: simple_auth_manager_passwords.json.generated
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /ui/health
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /ui/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: dags
+        persistentVolumeClaim:
+          claimName: airflow-dags-pvc
+      - name: logs
+        persistentVolumeClaim:
+          claimName: airflow-logs-pvc
+      - name: passwords-ro
+        secret:
+          secretName: airflow-passwords
+          defaultMode: 0644
+      - name: passwords-rw
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow-webserver
+  namespace: mlops
+  labels:
+    app: airflow-webserver
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: airflow-webserver

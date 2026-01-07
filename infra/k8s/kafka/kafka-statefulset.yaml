@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: mlops
+  labels:
+    app: kafka
+spec:
+  serviceName: kafka-headless
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:8.0.0
+        ports:
+        - containerPort: 9092
+          name: plaintext
+        - containerPort: 9093
+          name: controller
+        - containerPort: 9094
+          name: internal
+        command:
+        - sh
+        - -exc
+        - |
+          export KAFKA_NODE_ID=${HOSTNAME##*-}
+          export KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://${POD_NAME}.kafka-headless.mlops.svc.cluster.local:9092,INTERNAL://${POD_NAME}.kafka-headless.mlops.svc.cluster.local:9094
+          exec /etc/confluent/docker/run
+        env:
+        - name: CLUSTER_ID
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: CLUSTER_ID
+        - name: KAFKA_PROCESS_ROLES
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: KAFKA_PROCESS_ROLES
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "0@kafka-0.kafka-headless.mlops.svc.cluster.local:9093,1@kafka-1.kafka-headless.mlops.svc.cluster.local:9093,2@kafka-2.kafka-headless.mlops.svc.cluster.local:9093"
+        - name: KAFKA_LISTENERS
+          value: "PLAINTEXT://:9092,CONTROLLER://:9093,INTERNAL://:9094"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: KAFKA_CONTROLLER_LISTENER_NAMES
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: kafka-config
+              key: KAFKA_INTER_BROKER_LISTENER_NAME
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /var/lib/kafka/data
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          failureThreshold: 10
+        readinessProbe:
+          tcpSocket:
+            port: 9092
+          initialDelaySeconds: 90
+          periodSeconds: 10
+          failureThreshold: 15
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
