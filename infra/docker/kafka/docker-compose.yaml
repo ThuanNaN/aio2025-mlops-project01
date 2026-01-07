@@ -1,0 +1,62 @@
+services:
+  broker-1:
+    image: confluentinc/cp-kafka:8.0.0
+    ports:
+      - 9092:9092
+    volumes:
+      - broker-1-data:/var/lib/kafka/data
+    environment:
+      - CLUSTER_ID=1
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=controller,broker
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@broker-1:9093,2@broker-2:9093,3@broker-3:9093
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,INTERNAL://:9094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,INTERNAL://broker-1:9094
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    extra_hosts:
+       - "host.docker.internal:host-gateway"
+  
+  broker-2:
+    image: confluentinc/cp-kafka:8.0.0
+    ports:
+      - 9192:9092
+    volumes:
+      - broker-2-data:/var/lib/kafka/data
+    environment:
+      - CLUSTER_ID=1
+      - KAFKA_NODE_ID=2
+      - KAFKA_PROCESS_ROLES=controller,broker
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@broker-1:9093,2@broker-2:9093,3@broker-3:9093
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,INTERNAL://:9094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9192,INTERNAL://broker-2:9094
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    extra_hosts:
+       - "host.docker.internal:host-gateway"
+    
+  broker-3:
+    image: confluentinc/cp-kafka:8.0.0
+    ports:
+      - 9292:9092
+    volumes:
+      - broker-3-data:/var/lib/kafka/data
+    environment:  
+      - CLUSTER_ID=1
+      - KAFKA_NODE_ID=3
+      - KAFKA_PROCESS_ROLES=controller,broker
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@broker-1:9093,2@broker-2:9093,3@broker-3:9093
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,INTERNAL://:9094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9292,INTERNAL://broker-3:9094
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+    extra_hosts:
+       - "host.docker.internal:host-gateway"
+
+volumes:
+  broker-1-data:
+  broker-2-data:
+  broker-3-data:
