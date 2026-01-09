@@ -25,8 +25,8 @@ PYTHON_SCRIPT="$PROJECT_ROOT/src/scripts/register_model.py"
 CONFIG_PATH="$PROJECT_ROOT/src/config/config.yaml"
 
 
-MODEL_NAME="model"
-VERSION="1"  # Version number from registration output
+MODEL_NAME="model_xgboost_v0.3.2"
+VERSION="2"  # Version number from registration output
 ALIAS="staging"  # Options: staging, champion, production
 
 echo "Setting alias '$ALIAS' for model: $MODEL_NAME version $VERSION"

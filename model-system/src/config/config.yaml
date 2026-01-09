@@ -9,7 +9,7 @@ mlflow:
 
 model:
   name: "xgboost_churn"
-  version: "0.3.1"
+  version: "0.3.2"
   type: "classifier" 
   description: "XGBoost model for credit risk prediction"
   train_test_split: 0.2
@@ -44,10 +44,7 @@ model:
       - "auc"
       - "logloss"
       - "error@0.5"
-
-    
-
-
+      
 evaluation:
   shap:
     enabled: true

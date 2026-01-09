@@ -1,6 +1,7 @@
 """
 Docstring for model-system.src.model.xgboost_trainer
 """
+from pathlib import Path
 import mlflow
 import mlflow.xgboost
 from mlflow.models import infer_signature
@@ -195,6 +196,8 @@ class XGBoostTrainer:
         prediction = wrapper.predict(context=None, model_input=input_example)
         
         signature = infer_signature(input_example, prediction)
+        SRC_PATH = Path(__file__).resolve().parents[2]
+
         
         logger.info(f"Saving model as '{model_name}'...")
         mlflow.pyfunc.log_model(
@@ -202,7 +205,7 @@ class XGBoostTrainer:
             artifact_path=model_name,
             signature=signature,
             input_example=input_example.iloc[:3],
-            code_paths=['src/']
+            code_paths=[str(SRC_PATH)]
         )
     
     def load_model(self, model_uri: str):

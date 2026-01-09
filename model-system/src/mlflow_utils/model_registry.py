@@ -272,9 +272,11 @@ class ModelRegistry:
     def promote_model(
         self,
         model_name: str,
-        version: str,
+        version: str | None = None,
         from_alias: str = "staging",
         to_alias: str = "champion",
+        metric_name: str = "f1_score",
+        require_improvement: bool = True,
     ):
         """
         Promote a model from staging to production
@@ -285,9 +287,25 @@ class ModelRegistry:
             from_alias: Source alias
             to_alias: Target alias
         """
+        if version is None:
+            logger.info(f"No version specified, getting latest version of {model_name}")
+            versions = self.get_latest_versions(model_name=model_name)
+            if not versions:
+                logger.error(f"No versions found for model {model_name}")
+                return False
+            
+            latest = max(versions, key=lambda v: int(v.version))
+            version = latest.version
+            logger.info(f"Using latest version: v{version}")
+        
         logger.info(
             f"Promoting {model_name} v{version} "
             f"from {from_alias} to {to_alias}"
+        )
+        
+        candidate_version = self.client.get_model_version(
+            name=model_name,
+            version=version
         )
 
         try:
@@ -295,20 +313,69 @@ class ModelRegistry:
                 model_name=model_name,
                 alias=to_alias,
             )
+            
+            if require_improvement and existing:
+                logger.info(f"Comparing {metric_name} between models...")
+                
+                candidate_run = self.client.get_run(candidate_version.run_id) #type:ignore
+                existing_run = self.client.get_run(existing.run_id) #type:ignore
+                
+                
+                candidate_metric = candidate_run.data.metrics.get(metric_name)
+                existing_metric = existing_run.data.metrics.get(metric_name)
+                
+                if candidate_metric is None:
+                    logger.warning(
+                        f"Candidate model v{version} missing {metric_name} metric. "
+                        f"Cannot compare performance."
+                    )
+                elif existing_metric is None:
+                    logger.warning(
+                        f"Existing {to_alias} model v{existing.version} missing {metric_name} metric. "
+                        f"Proceeding with promotion."
+                    )
+                else:
+                    logger.info(
+                        f"Candidate v{version} {metric_name}: {candidate_metric:.4f}"
+                    )
+                    logger.info(
+                        f"Current {to_alias} v{existing.version} {metric_name}: {existing_metric:.4f}"
+                    )
+                    
+                    if candidate_metric <= existing_metric:
+                        logger.error(
+                            f"Promotion blocked! Candidate model does not improve {metric_name}. "
+                            f"Improvement: {candidate_metric - existing_metric:+.4f}"
+                        )
+                        return False
+                    else:
+                        improvement = candidate_metric - existing_metric
+                        improvement_pct = (improvement / existing_metric * 100)
+                        logger.info(
+                            f"Candidate model improves {metric_name} by "
+                            f"{improvement:+.4f} ({improvement_pct:+.2f}%)"
+                        )
+            
             logger.info(
-                f"Clearing existing alias '{to_alias=}' and '{from_alias=}' "
-                f"from v{existing.version}"
+                f"Clearing existing alias '{to_alias}' and '{from_alias}' "
+                f"from v{existing.version if existing else 'N/A'}"
             )
-            self.delete_model_version_alias(
-                model_name=model_name,
-                alias=to_alias,
-            )
-
-            self.delete_model_version_alias(
-                model_name=model_name,
-                alias=from_alias,
-            )
-        except Exception:
+            
+            if existing:
+                self.delete_model_version_alias(
+                    model_name=model_name,
+                    alias=to_alias,
+                )
+            
+            try:
+                self.delete_model_version_alias(
+                    model_name=model_name,
+                    alias=from_alias,
+                )
+            except Exception:
+                logger.info(f"No {from_alias} alias to clear")
+                
+        except Exception as e:
             logger.info(
                 f"No existing alias '{to_alias}' found — safe to continue"
             )
@@ -316,6 +383,7 @@ class ModelRegistry:
         self.set_model_version_alias(model_name, version, to_alias)
         
         logger.info(f"Model promoted to {to_alias}")
-    
-    
-    
+        return True
+        
+        
+        

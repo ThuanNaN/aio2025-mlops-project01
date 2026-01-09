@@ -26,8 +26,8 @@ PYTHON_SCRIPT="$PROJECT_ROOT/src/scripts/register_model.py"
 CONFIG_PATH="$PROJECT_ROOT/src/config/config.yaml"
 
 
-MODEL_NAME="model"
-VERSION="1"  # Version to promote
+MODEL_NAME="model_xgboost_v0.3.2"
+VERSION="2"  # Version to promote
 
 # =====================
 # Promote Model to Production

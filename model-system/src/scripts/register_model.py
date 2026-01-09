@@ -2,9 +2,6 @@
 Docstring for model-system.src.scripts.register_model
 """
 import argparse
-import sys
-from pathlib import Path
-import yaml
 from loguru import logger
 
 from src.mlflow_utils.model_registry import ModelRegistry

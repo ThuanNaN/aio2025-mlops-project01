@@ -24,9 +24,9 @@ export PYTHONPATH="$PROJECT_ROOT"
 PYTHON_SCRIPT="$PROJECT_ROOT/src/scripts/eval.py"
 CONFIG_PATH="$PROJECT_ROOT/src/config/config.yaml"
 EVAL_DATASET="/home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo/data/test.parquet"
-PREDICTION_FOLDER="$PROJECT_ROOT/prediction_folder/prediction4.csv"
+PREDICTION_FOLDER="$PROJECT_ROOT/prediction_folder/prediction11.csv"
 
-RUN_ID="43d4c10fb787422ebcdacc524c1f2258"
+RUN_ID="0e63c769c40541c7bf27b37e1d008f49"
 
 echo "$PROJECT_ROOT"
 
