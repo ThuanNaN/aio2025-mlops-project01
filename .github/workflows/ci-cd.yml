@@ -87,7 +87,7 @@ jobs:
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system
         run: |
-          conda run -n mlops_2026 bash ./src/run_sh/promote_model.sh
+          conda run -n mlops_2026 bash ./src/run_sh/promote.sh
 
   # serving: 
   #   runs-on: [self-hosted, linux]
