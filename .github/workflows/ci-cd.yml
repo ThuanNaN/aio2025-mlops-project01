@@ -21,19 +21,19 @@ jobs:
 
       - name: Verify Current Path
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
+        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
         run: |
           pwd
 
       - name: Apply Feast Feature Definitions
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
+        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
         run: |
           conda run -n churn_mlops feast apply
 
       - name: Materialize Feast Features
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
+        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
         run: |
           conda run -n churn_mlops feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
 

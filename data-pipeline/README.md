@@ -13,8 +13,8 @@ This repository demonstrates an **end-to-end data pipeline** for a customer chur
 Clone the repository:
 
 ```bash
-git clone https://github.com/dangnha/data-pipeline-mlops.git
-cd data-pipeline-mlops
+git clone https://github.com/dangnha/data-pipeline.git
+cd data-pipeline
 ```
 
 ---
