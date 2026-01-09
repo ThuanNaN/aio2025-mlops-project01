@@ -69,13 +69,13 @@ jobs:
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system
         run: |
-          conda run -n mlops_2026 bash ./src/run_sh/eval.sh
+          conda run -n mlops_2026 bash ./src/run_sh/eval.sh --run_id ${{ env.RUN_ID }} | tee eval.log
 
       - name: Run Registration
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system
         run: |
-          conda run -n mlops_2026 bash ./src/run_sh/register.sh --run_id ${{ env.RUN_ID }}
+          conda run -n mlops_2026 bash ./src/run_sh/register.sh --run_id ${{ env.RUN_ID }} | tee register.log
 
       - name: Update Model Version Alias
         shell: bash
