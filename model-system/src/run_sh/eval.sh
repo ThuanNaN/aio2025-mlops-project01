@@ -2,6 +2,30 @@
 set -e
 
 # =====================
+# Parse arguments
+# =====================
+RUN_ID=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --run-id)
+      RUN_ID="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$RUN_ID" ]]; then
+  echo "ERROR: --run-id is required"
+  exit 1
+fi
+
+
+# =====================
 # Resolve paths
 # =====================
 
@@ -26,8 +50,6 @@ CONFIG_PATH="$PROJECT_ROOT/src/config/config.yaml"
 EVAL_DATASET="/home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo/data/test.parquet"
 PREDICTION_FOLDER="$PROJECT_ROOT/prediction_folder/prediction11.csv"
 
-RUN_ID="0e63c769c40541c7bf27b37e1d008f49"
-
 echo "$PROJECT_ROOT"
 
 # =====================
@@ -39,4 +61,3 @@ python "$PYTHON_SCRIPT" \
     --run-id "$RUN_ID" \
     --eval-data-path "$EVAL_DATASET"  \
     --output-path-prediction "$PREDICTION_FOLDER"
-
