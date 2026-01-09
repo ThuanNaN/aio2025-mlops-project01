@@ -46,10 +46,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Activate conda environment
-        shell: bash
+        shell: bash 
         run: |
           source /home/mlops/miniconda3/bin/activate
-          conda activate churn_mlops
+          conda activate mlops_2026
 
       - name: Verify Current Path
         shell: bash
@@ -61,42 +61,44 @@ jobs:
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system/src/run_sh
         run: |
-          bash ./train.sh
+          conda run -n mlops_2026 bash ./train.sh | tee train.log
+          RUN_ID=$(grep "Run ID: " train.log | cut -d= -f2)
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
       - name: Run Evaluation
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system/src/run_sh
         run: |
-          bash ./eval.sh
+          conda run -n mlops_2026 bash ./eval.sh
 
       - name: Run Registration
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system/src/run_sh
         run: |
-          bash ./register_model.sh
+          conda run -n mlops_2026 bash ./register.sh --run_id ${{ env.RUN_ID }}
 
       - name: Update Model Version Alias
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system/src/run_sh
         run: |
-          bash ./set_model_alias.sh
+          conda run -n mlops_2026 bash ./set_model_alias.sh
 
       - name: Promote to Champion
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/model-system/src/run_sh
         run: |
-          bash ./promote_model.sh
+          conda run -n mlops_2026 bash ./promote_model.sh
 
-  serving: 
-    runs-on: [self-hosted, linux]
-    needs: training
+  # serving: 
+  #   runs-on: [self-hosted, linux]
+  #   needs: training
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Activate conda environment
-        shell: bash
-        run: |
-          source /home/mlops/miniconda3/bin/activate
-          conda activate churn_mlops
+  #     - name: Activate conda environment
+  #       shell: bash
+  #       run: |
+  #         source /home/mlops/miniconda3/bin/activate
+  #         conda activate churn_mlops
