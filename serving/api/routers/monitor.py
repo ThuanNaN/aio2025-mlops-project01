@@ -53,8 +53,8 @@ async def check_drift(
     """
     try:
         # Set default paths
-        ref_path = reference_path or "/home/mlops/Repository/aio2025-mlops-project01/temp/model-system/prediction_folder/prediction4.csv"
-        curr_path = current_path or "/home/mlops/Repository/aio2025-mlops-project01/temp/serving/data_model/production/production.csv"
+        ref_path = reference_path or "/home/mlops/Repository/aio2025-mlops-project01/model-system/prediction_folder/prediction4.csv"
+        curr_path = current_path or "/home/mlops/Repository/aio2025-mlops-project01/serving/data_model/production/production.csv"
         
         logger.info(f"Loading reference data from: {ref_path}")
         logger.info(f"Loading current data from: {curr_path} (last {days} days)")
