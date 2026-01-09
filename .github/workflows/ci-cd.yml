@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Activate conda environment
+      - name: Test activate conda environment
         shell: bash
         run: |
           source /home/mlops/miniconda3/bin/activate
@@ -29,17 +29,13 @@ jobs:
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
         run: |
-          source /home/mlops/miniconda3/bin/activate
-          conda activate churn_mlops
-          feast apply
+          conda run -n churn_mlops feast apply
 
       - name: Materialize Feast Features
         shell: bash
         working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
         run: |
-          source /home/mlops/miniconda3/bin/activate
-          conda activate churn_mlops
-          feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
+          conda run -n churn_mlops feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
 
 
   training:
