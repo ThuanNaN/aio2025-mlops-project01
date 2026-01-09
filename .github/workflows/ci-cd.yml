@@ -19,23 +19,21 @@ jobs:
           source /home/mlops/miniconda3/bin/activate
           conda activate churn_mlops
 
-      - name: Go to feature repo directory
-        shell: bash
-        run: |
-          cd /home/mlops/Repository/aio2025-mlops-project01/data-pipeline-mlops/churn_feature_store/churn_features/feature_repo/
-      
       - name: Verify Current Path
         shell: bash
+        working-directory: data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
         run: |
           pwd
 
       - name: Apply Feast Feature Definitions
         shell: bash
+        working-directory: data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
         run: |
           feast apply
 
       - name: Materialize Feast Features
         shell: bash
+        working-directory: data-pipeline-mlops/churn_feature_store/churn_features/feature_repo
         run: |
           feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
 
@@ -53,35 +51,41 @@ jobs:
           source /home/mlops/miniconda3/bin/activate
           conda activate churn_mlops
 
-      - name: Go to run_sh directory
+      - name: Verify Current Path
         shell: bash
+        working-directory: model-system/src/run_sh
         run: |
-          cd /home/mlops/Repository/aio2025-mlops-project01/model-system/src/run_sh
+          pwd
 
       - name: Run Training
         shell: bash
+        working-directory: model-system/src/run_sh
         run: |
           bash ./train.sh
 
       - name: Run Evaluation
         shell: bash
+        working-directory: model-system/src/run_sh
         run: |
           bash ./eval.sh
 
       - name: Run Registration
         shell: bash
+        working-directory: model-system/src/run_sh  
         run: |
           bash ./register_model.sh
 
-      # - name: Update Model Version Alias
-      #   shell: bash
-      #   run: |
-      #     bash ./set_model_alias.sh
+      - name: Update Model Version Alias
+        shell: bash
+        working-directory: model-system/src/run_sh
+        run: |
+          bash ./set_model_alias.sh
 
-      # - name: Promote to Champion
-      #   shell: bash
-      #   run: |
-      #     bash ./promote_model.sh
+      - name: Promote to Champion
+        shell: bash
+        working-directory: model-system/src/run_sh
+        run: |
+          bash ./promote_model.sh
 
   serving: 
     runs-on: [self-hosted, linux]
@@ -96,8 +100,3 @@ jobs:
         run: |
           source /home/mlops/miniconda3/bin/activate
           conda activate churn_mlops
-
-      - name: Go to run_sh directory
-        shell: bash
-        run: |
-          cd /home/mlops/
