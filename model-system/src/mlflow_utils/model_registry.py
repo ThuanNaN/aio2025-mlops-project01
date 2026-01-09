@@ -4,11 +4,34 @@ Docstring for model-system.src.mlflow_utils.model_registry
 from mlflow import MlflowClient
 from mlflow.entities.model_registry import ModelVersion
 from loguru import logger
+import mlflow
 
 class ModelRegistry:
     def __init__(self, tracking_uri: str):
         self.client = MlflowClient(tracking_uri=tracking_uri)
         logger.info(f"Initialized Model Registry: {tracking_uri}")
+
+
+    def retrieve_eval_metrics_based_on_run_id(
+        self,
+        run_id: str,
+        metric: str
+    ):
+        all_experiments = mlflow.search_runs(search_all_experiments=True)
+        evaluation = all_experiments[ #type:ignore
+            (all_experiments["tags.source_run_id"] == f"{run_id}") & #type:ignore
+            (all_experiments["status"] == "FINISHED") #type:ignore
+        ]
+
+        latest_eval = evaluation.sort_values(
+            by="end_time",
+            ascending=False
+        ).head(1)
+
+        eval_run_id = latest_eval['run_id'].values.tolist()[0]
+        eval_run = self.client.get_run(eval_run_id)
+
+        return eval_run.data.metrics[metric]
     
     def register_model(
         self,
@@ -317,12 +340,16 @@ class ModelRegistry:
             if require_improvement and existing:
                 logger.info(f"Comparing {metric_name} between models...")
                 
-                candidate_run = self.client.get_run(candidate_version.run_id) #type:ignore
-                existing_run = self.client.get_run(existing.run_id) #type:ignore
+         
                 
-                
-                candidate_metric = candidate_run.data.metrics.get(metric_name)
-                existing_metric = existing_run.data.metrics.get(metric_name)
+                candidate_metric = self.retrieve_eval_metrics_based_on_run_id(
+                    run_id=candidate_version.run_id, #type:ignore
+                    metric=metric_name    
+                )
+                existing_metric = self.retrieve_eval_metrics_based_on_run_id(
+                    run_id=existing.run_id, #type:ignore
+                    metric=metric_name    
+                )
                 
                 if candidate_metric is None:
                     logger.warning(

@@ -197,6 +197,7 @@ class XGBoostTrainer:
         
         signature = infer_signature(input_example, prediction)
         SRC_PATH = Path(__file__).resolve().parents[2]
+        logger.info(f"{SRC_PATH=}")
 
         
         logger.info(f"Saving model as '{model_name}'...")
@@ -205,7 +206,7 @@ class XGBoostTrainer:
             artifact_path=model_name,
             signature=signature,
             input_example=input_example.iloc[:3],
-            code_paths=[str(SRC_PATH)]
+            code_paths=[str(SRC_PATH / 'src')]
         )
     
     def load_model(self, model_uri: str):
