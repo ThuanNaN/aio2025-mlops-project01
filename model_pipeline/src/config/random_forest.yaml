@@ -1,0 +1,57 @@
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "test_churn_prediction_random_forest_v1.1"
+  artifact_location: "s3://mlflow/"
+  registry_uri: "http://localhost:5000"
+  tags:
+    task: "churn_prediction"
+    purpose: "test"
+    model_family: "random_forest"
+
+model:
+  model_type: "random_forest"
+  name: "random_forest_churn"
+  version: "1.0.0"
+  type: "classifier" 
+  description: "Random Forest model for churn prediction"
+  train_test_split: 0.2
+  random_state: 42
+
+  parameters:
+    n_estimators: 200
+    criterion: "gini"  # gini, entropy, log_loss
+    max_depth: 20
+    min_samples_split: 10
+    min_samples_leaf: 4
+    min_weight_fraction_leaf: 0.0
+    max_features: "sqrt"  # sqrt, log2, None, int, float
+    max_leaf_nodes: null
+    min_impurity_decrease: 0.0
+    bootstrap: true
+    oob_score: true  # Out-of-bag score estimation
+    n_jobs: -1  # Use all processors
+    random_state: 42
+    verbose: 1
+    warm_start: false
+    class_weight: "balanced"  # Handle imbalanced data
+    ccp_alpha: 0.0  # Complexity parameter for pruning
+    max_samples: null  # If bootstrap=true, samples to draw
+
+evaluation:
+  thresholds:
+    accuracy_score: 0.8
+    f1_score: 0.8
+
+features:
+  target_column: churned
+  training_features:
+    - age
+    - gender
+    - tenure_months
+    - usage_frequency
+    - support_calls
+    - payment_delay_days
+    - subscription_type
+    - contract_length
+    - total_spend
+    - last_interaction_days

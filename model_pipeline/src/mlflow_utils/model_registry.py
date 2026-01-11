@@ -9,6 +9,7 @@ import mlflow
 class ModelRegistry:
     def __init__(self, tracking_uri: str):
         self.client = MlflowClient(tracking_uri=tracking_uri)
+        mlflow.set_tracking_uri(tracking_uri)
         logger.info(f"Initialized Model Registry: {tracking_uri}")
 
 
@@ -18,6 +19,7 @@ class ModelRegistry:
         metric: str
     ):
         all_experiments = mlflow.search_runs(search_all_experiments=True)
+        print(all_experiments)
         evaluation = all_experiments[ #type:ignore
             (all_experiments["tags.source_run_id"] == f"{run_id}") & #type:ignore
             (all_experiments["status"] == "FINISHED") #type:ignore
@@ -295,7 +297,7 @@ class ModelRegistry:
     def promote_model(
         self,
         model_name: str,
-        version: str | None = None,
+        version: str | None,
         from_alias: str = "staging",
         to_alias: str = "champion",
         metric_name: str = "f1_score",
@@ -310,107 +312,100 @@ class ModelRegistry:
             from_alias: Source alias
             to_alias: Target alias
         """
+        logger.info(f"Promoting {model_name} v{version} as global {to_alias}")
+        
         if version is None:
-            logger.info(f"No version specified, getting latest version of {model_name}")
+            logger.info(f"No version specified, selecting latest version of {model_name}")
             versions = self.get_latest_versions(model_name=model_name)
             if not versions:
                 logger.error(f"No versions found for model {model_name}")
                 return False
-            
-            latest = max(versions, key=lambda v: int(v.version))
-            version = latest.version
+            version = max(versions, key=lambda v: int(v.version)).version
             logger.info(f"Using latest version: v{version}")
-        
-        logger.info(
-            f"Promoting {model_name} v{version} "
-            f"from {from_alias} to {to_alias}"
-        )
-        
-        candidate_version = self.client.get_model_version(
+
+        candidate = self.client.get_model_version(
             name=model_name,
             version=version
         )
+        candidate_metric = self.retrieve_eval_metrics_based_on_run_id(
+            run_id=candidate.run_id,  # type: ignore
+            metric=metric_name,
+        )
 
-        try:
-            existing = self.get_model_version_by_alias(
-                model_name=model_name,
+        if candidate_metric is None:
+            logger.error(
+                f"Candidate {model_name} v{version} missing metric '{metric_name}'. Aborting."
+            )
+            return False
+        
+        logger.info(
+            f"Candidate {model_name} v{version} {metric_name}: {candidate_metric:.4f}"
+        )
+
+        current_champion = None
+
+        for mv in self.search_model_versions():
+            mv_details = self.client.get_model_version(
+                name=mv.name,
+                version=mv.version,
+            )
+            if mv_details.aliases and to_alias in mv_details.aliases:
+                current_champion = mv_details
+                break
+                
+        if current_champion:
+            logger.info(
+            f"Current champion: {current_champion.name} v{current_champion.version}"
+            )
+
+            champion_metric = self.retrieve_eval_metrics_based_on_run_id(
+                run_id=current_champion.run_id,  # type: ignore
+                metric=metric_name,
+            )
+
+            if champion_metric is None:
+                logger.warning(
+                    f"Current champion missing '{metric_name}'. Proceeding with promotion."
+                )
+            else:
+                logger.info(
+                    f"Current champion {metric_name}: {champion_metric:.4f}"
+                )
+
+                if require_improvement and candidate_metric <= champion_metric:
+                    logger.error(
+                        f"Promotion blocked: candidate does not improve {metric_name} "
+                        f"({candidate_metric:.4f} <= {champion_metric:.4f})"
+                    )
+                    return False
+                improvement = candidate_metric - champion_metric
+                logger.info(
+                    f"Candidate improves {metric_name} by {improvement:+.4f}"
+                )
+            
+            self.delete_model_version_alias(
+                model_name=current_champion.name,
                 alias=to_alias,
             )
             
-            if require_improvement and existing:
-                logger.info(f"Comparing {metric_name} between models...")
-                
-         
-                
-                candidate_metric = self.retrieve_eval_metrics_based_on_run_id(
-                    run_id=candidate_version.run_id, #type:ignore
-                    metric=metric_name    
-                )
-                existing_metric = self.retrieve_eval_metrics_based_on_run_id(
-                    run_id=existing.run_id, #type:ignore
-                    metric=metric_name    
-                )
-                
-                if candidate_metric is None:
-                    logger.warning(
-                        f"Candidate model v{version} missing {metric_name} metric. "
-                        f"Cannot compare performance."
-                    )
-                elif existing_metric is None:
-                    logger.warning(
-                        f"Existing {to_alias} model v{existing.version} missing {metric_name} metric. "
-                        f"Proceeding with promotion."
-                    )
-                else:
-                    logger.info(
-                        f"Candidate v{version} {metric_name}: {candidate_metric:.4f}"
-                    )
-                    logger.info(
-                        f"Current {to_alias} v{existing.version} {metric_name}: {existing_metric:.4f}"
-                    )
-                    
-                    if candidate_metric <= existing_metric:
-                        logger.error(
-                            f"Promotion blocked! Candidate model does not improve {metric_name}. "
-                            f"Improvement: {candidate_metric - existing_metric:+.4f}"
-                        )
-                        return False
-                    else:
-                        improvement = candidate_metric - existing_metric
-                        improvement_pct = (improvement / existing_metric * 100)
-                        logger.info(
-                            f"Candidate model improves {metric_name} by "
-                            f"{improvement:+.4f} ({improvement_pct:+.2f}%)"
-                        )
-            
-            logger.info(
-                f"Clearing existing alias '{to_alias}' and '{from_alias}' "
-                f"from v{existing.version if existing else 'N/A'}"
-            )
-            
-            if existing:
-                self.delete_model_version_alias(
-                    model_name=model_name,
-                    alias=to_alias,
-                )
-            
-            try:
-                self.delete_model_version_alias(
-                    model_name=model_name,
-                    alias=from_alias,
-                )
-            except Exception:
-                logger.info(f"No {from_alias} alias to clear")
-                
-        except Exception as e:
-            logger.info(
-                f"No existing alias '{to_alias}' found — safe to continue"
-            )
+        else:
+            logger.info("No existing global champion found")
         
-        self.set_model_version_alias(model_name, version, to_alias)
+
+        try:
+            self.delete_model_version_alias(
+                model_name=model_name,
+                alias=from_alias,
+            )
+        except Exception:
+            logger.info(f"No '{from_alias}' alias to clear for {model_name} v{version}")
         
-        logger.info(f"Model promoted to {to_alias}")
+        self.set_model_version_alias(
+            model_name=model_name,
+            version=version,
+            alias=to_alias,
+        )
+        logger.success(
+            f"Global champion is now {model_name} v{version}"
+        )
         return True
-        
-        
-        

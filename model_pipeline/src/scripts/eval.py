@@ -1,6 +1,7 @@
 """
 Docstring for model_pipelinenene.src.scripts.eval
 """
+import sys
 from pathlib import Path
 import argparse
 import pandas as pd
@@ -136,7 +137,7 @@ def main():
     config = load_config(args.config)
 
     if args.run_id and not args.model_uri:
-        model_uri = f"runs:/{args.run_id}/{config['model']['name']}"
+        model_uri = f"runs:/{args.run_id}/{config['model']['name']}" #pattern1. models:/<model_id>
         logger.info(f"Using model from run: {args.run_id}")
         logger.info(f"Using model URI: {model_uri}")
     else:
@@ -179,8 +180,6 @@ def main():
 
     eval_data = eval_data[feature_cols + [target_col]]
 
-
-
     
     evaluator = ModelEvaluator(
         config=config.get("evaluation", {}),
@@ -206,10 +205,6 @@ def main():
         logger.info("=" * 60)
         logger.info("EVALUATING MODEL")
         logger.info("=" * 60)
-        evaluator_config = {
-                'log_explainer': True,
-                'shap': 'exact', 
-            }
         metrics = evaluator.evaluate_model(
             model_uri=model_uri,
             eval_data=eval_data,
@@ -229,9 +224,11 @@ def main():
             tracker.set_tag("validation_passed", str(validation_passed))
             
             if validation_passed:
-                logger.info("✅ Model passed all threshold validations")
+                logger.info("Model passed all threshold validations")
             else:
-                logger.warning("❌ Model failed threshold validation")
+                logger.error("Model failed threshold validation")
+                # sys.exit(1)
+
 
         if args.output_path_prediction:
             logger.info("=" * 60)

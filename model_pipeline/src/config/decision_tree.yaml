@@ -1,0 +1,51 @@
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "test_churn_prediction_decision_tree_v1.1"
+  artifact_location: "s3://mlflow/"
+  registry_uri: "http://localhost:5000"
+  tags:
+    task: "churn_prediction"
+    purpose: "test"
+    model_family: "decision_tree"
+
+model:
+  model_type: "decision_tree"
+  name: "decision_tree_churn"
+  version: "1.0.0"
+  type: "classifier" 
+  description: "Decision Tree model for churn prediction"
+  train_test_split: 0.2
+  random_state: 42
+
+  parameters:
+    criterion: "gini"  
+    splitter: "best"  
+    max_depth: 15
+    min_samples_split: 20
+    min_samples_leaf: 10
+    min_weight_fraction_leaf: 0.0
+    max_features: null  # None, sqrt, log2, int, float
+    random_state: 42
+    max_leaf_nodes: null
+    min_impurity_decrease: 0.01  # Threshold for early stopping
+    class_weight: "balanced"
+    ccp_alpha: 0.01  # Pruning parameter (higher = more pruning)
+
+evaluation:
+  thresholds:
+    accuracy_score: 0.8
+    f1_score: 0.8
+
+features:
+  target_column: churned
+  training_features:
+    - age
+    - gender
+    - tenure_months
+    - usage_frequency
+    - support_calls
+    - payment_delay_days
+    - subscription_type
+    - contract_length
+    - total_spend
+    - last_interaction_days

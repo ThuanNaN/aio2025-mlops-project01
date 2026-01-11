@@ -1,0 +1,53 @@
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "test_churn_prediction_logistic_v1.1"
+  artifact_location: "s3://mlflow/"
+  registry_uri: "http://localhost:5000"
+  tags:
+    task: "churn_prediction"
+    purpose: "test"
+    model_family: "logistic_regression"
+
+model:
+  model_type: "logistic_regression"
+  name: "logistic_regression_churn"
+  version: "1.0.0"
+  type: "classifier" 
+  description: "Logistic Regression model for churn prediction"
+  train_test_split: 0.2
+  random_state: 42
+
+  parameters:
+    penalty: "l2"  
+    tol: 0.0001  
+    C: 1.0  
+    fit_intercept: true
+    intercept_scaling: 1
+    class_weight: "balanced"  
+    random_state: 42
+    solver: "lbfgs"  # lbfgs, liblinear, newton-cg, newton-cholesky, sag, saga
+    max_iter: 1000
+    multi_class: "auto"  # auto, ovr, multinomial
+    verbose: 1
+    warm_start: false
+    n_jobs: -1
+    l1_ratio: null  
+
+evaluation:
+  thresholds:
+    accuracy_score: 0.8
+    f1_score: 0.8
+
+features:
+  target_column: churned
+  training_features:
+    - age
+    - gender
+    - tenure_months
+    - usage_frequency
+    - support_calls
+    - payment_delay_days
+    - subscription_type
+    - contract_length
+    - total_spend
+    - last_interaction_days

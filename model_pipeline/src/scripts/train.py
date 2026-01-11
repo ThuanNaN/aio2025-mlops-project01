@@ -14,11 +14,10 @@ from loguru import logger
 from sklearn.preprocessing import LabelEncoder
 
 from src.mlflow_utils.experiment_tracker import ExperimentTracker
-from src.model.xgboost_trainer import XGBoostTrainer
+from src.model.xgboost_trainer import GenericBinaryClassifierTrainer
 from src.utility.helper import load_config
 import os
 
-#[IMPORTANT] SETUP docker, remember to get rid of these hardcoded!
 os.environ["AWS_ACCESS_KEY_ID"] = "minio"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "minio123"
 os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
@@ -54,9 +53,6 @@ def main():
         default=None,
         help="MLflow run name",
     )
-
-    
-
   
     args = parser.parse_args()
 
@@ -106,9 +102,10 @@ def main():
     feature_encoders = encoders
 
     
-    trainer = XGBoostTrainer(
+    trainer = GenericBinaryClassifierTrainer(
         config=config["model"],
         experiment_tracker=tracker,
+        model_type=config['model']['model_type']
     )
 
     tags: dict= config["mlflow"]["tags"]
@@ -129,12 +126,12 @@ def main():
         )
         target_encoder = encoders.get(target_col)
 
-        model = trainer.train(
-            dtrain=dtrain,
-            dtest=dval,
-            params=config["model"]["xgboost"],
-            num_boost_round=config["model"]["xgboost"]["n_estimators"],
-            early_stopping_rounds=config["model"]["xgboost"]["early_stopping_rounds"],
+        trainer.train(
+            X_train=dtrain,
+            y_train=y_train,
+            X_test=dval,
+            y_test=y_val,
+            params=config["model"]["parameters"],
         )
         
 
@@ -150,8 +147,6 @@ def main():
         logger.info("TRAINING COMPLETE")
         logger.info(f"Run ID: {run.info.run_id}")
         logger.info(f"Run Name: {args.run_name or 'N/A'}")
-        logger.info(f"Best Iteration: {model.best_iteration}")
-        logger.info(f"Best Score: {model.best_score:.4f}")
         
 
 if __name__ == "__main__":
