@@ -8,18 +8,21 @@ on:
       - 'serving_pipeline/Dockerfile.ui'
       - 'serving_pipeline/requirements.txt'
       - 'serving_pipeline/sample_retrieval.py'
+      - '.github/workflows/ui-build.yml'
   pull_request:
     paths:
       - 'serving_pipeline/ui.py'
       - 'serving_pipeline/Dockerfile.ui'
       - 'serving_pipeline/requirements.txt'
       - 'serving_pipeline/sample_retrieval.py'
+      - '.github/workflows/ui-build.yml'
 
 env:
   REGISTRY: ghcr.io
   REF_REPO: thuannan/aivn-lms-backend/serving_pipeline
   DOCKER_BUILDKIT: 1
   SERVING_REPO_PATH: /home/mlops/Repository/aio2025-mlops-project01/serving_pipeline
+  API_BASE_URL: http://api.mlopsvn.space
 
 jobs:
   ui:
