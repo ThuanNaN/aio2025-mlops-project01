@@ -5,6 +5,15 @@ on:
     branches: [ "main" ]
   pull_request:
 
+
+env:
+  REGISTRY: ghcr.io
+  REF_REPO: aio2025-mlops-project01/serving_pipeline
+  DOCKER_BUILDKIT: 1
+  FEAST_REPO_PATH: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
+  TRAINING_REPO_PATH: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline
+  SERVING_REPO_PATH: /home/mlops/Repository/aio2025-mlops-project01/serving_pipeline
+
 jobs:
   feast:
     runs-on: [self-hosted, linux]
@@ -19,21 +28,15 @@ jobs:
           source /home/mlops/miniconda3/bin/activate
           conda activate churn_mlops
 
-      - name: Verify Current Path
-        shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
-        run: |
-          pwd
-
       - name: Apply Feast Feature Definitions
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
+        working-directory: ${{ env.FEAST_REPO_PATH }}
         run: |
           conda run -n churn_mlops feast apply
 
       - name: Materialize Feast Features
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo
+        working-directory: ${{ env.FEAST_REPO_PATH }}
         run: |
           conda run -n churn_mlops feast materialize-incremental $(date -u +"%Y-%m-%dT%H:%M:%S")
 
@@ -45,21 +48,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Activate conda environment
+      - name: Test activate conda environment
         shell: bash 
         run: |
           source /home/mlops/miniconda3/bin/activate
           conda activate mlops_2026
 
-      - name: Verify Current Path
-        shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline/src/run_sh
-        run: |
-          pwd
-
       - name: Run Training
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline
+        working-directory: ${{ env.TRAINING_REPO_PATH }}
         run: |
           conda run -n mlops_2026 bash ./src/run_sh/train.sh | tee train.log
           RUN_ID=$(grep -oE 'runs/[a-f0-9]+' train.log | head -n1 | cut -d/ -f2)
@@ -71,25 +68,25 @@ jobs:
 
       - name: Run Evaluation
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline
+        working-directory: ${{ env.TRAINING_REPO_PATH }}
         run: |
           conda run -n mlops_2026 bash ./src/run_sh/eval.sh --run-id ${{ env.RUN_ID }} | tee eval.log
 
       - name: Run Registration
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline
+        working-directory: ${{ env.TRAINING_REPO_PATH }}
         run: |
           conda run -n mlops_2026 bash ./src/run_sh/register.sh --run-id ${{ env.RUN_ID }} | tee register.log
 
       - name: Update Model Version Alias
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline
+        working-directory: ${{ env.TRAINING_REPO_PATH }}
         run: |
           conda run -n mlops_2026 bash ./src/run_sh/set_model_alias.sh
 
       - name: Promote to Champion
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/model_pipeline
+        working-directory: ${{ env.TRAINING_REPO_PATH }}
         run: |
           conda run -n mlops_2026 bash ./src/run_sh/promote.sh
 
@@ -98,9 +95,46 @@ jobs:
     needs: training
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ vars.REF_REPO }}
+          tags: |
+            # Tag for main branch
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.SERVING_REPO_PATH }}
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ vars.REF_REPO }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ vars.REF_REPO }}:buildcache,mode=max
+
       - name: Start API Service
         shell: bash
-        working-directory: /home/mlops/Repository/aio2025-mlops-project01/serving_pipeline
+        working-directory: ${{ env.SERVING_REPO_PATH }}
         run: |
           docker compose up -d --build
         
