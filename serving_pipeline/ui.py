@@ -1,6 +1,3 @@
-"""
-Enhanced Gradio UI with Batch Prediction support
-"""
 import gradio as gr
 import requests
 import pandas as pd
@@ -16,7 +13,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8003")
 
 
 def predict_single(age, gender, tenure, usage_freq, support_calls, 
@@ -217,13 +214,6 @@ def search_customer_data(customer_id: str) -> str:
             nan_cols = [col for col, count in nan_counts.items() if count > 0]
             return f"""
 **Invalid Data**
-
-Detected {total_nan} NaN values in customer data.
-
-**Columns with NaN:**
-{chr(10).join(f'- {col}' for col in nan_cols)}
-
-**Details have been logged.**
             """.strip()
         
         # No NaN - proceed with prediction
@@ -404,6 +394,7 @@ if __name__ == "__main__":
     
     demo.launch(
         server_name="0.0.0.0",
-        server_port=7860,
+        # server_port=7860,
+        server_port=7823,
         share=False  # Set to True to get public URL
     )
