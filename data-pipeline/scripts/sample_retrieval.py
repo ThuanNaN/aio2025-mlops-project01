@@ -24,13 +24,13 @@ FEATURES = [
 
 def get_customer_features(customer_id: Union[int, str, List[Union[int, str]]]) -> pd.DataFrame:
     """
-    Lấy features từ feature store cho customer_id hoặc danh sách customer_id
+    Get features from feature store for customer_id or list of customer_ids
     
     Args:
-        customer_id: Customer ID (int, str) hoặc list of customer IDs
+        customer_id: Customer ID (int, str) or list of customer IDs
         
     Returns:
-        DataFrame chứa features
+        DataFrame containing features
     """
     store = FeatureStore(repo_path=repo_path)
     
@@ -56,7 +56,7 @@ def get_customer_features(customer_id: Union[int, str, List[Union[int, str]]]) -
         entity_rows=entity_rows,
         features=FEATURES,
     ).to_df()
-    
+    print(f"Features for customer_id: {customer_id} - Shape: {df.shape}")
     return df
 
 
