@@ -108,7 +108,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ vars.REF_REPO }}
+          images: ${{ env.REGISTRY }}/${{ env.REF_REPO }}
           tags: |
             # Tag for main branch
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
@@ -130,8 +130,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ vars.REF_REPO }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ vars.REF_REPO }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.REF_REPO }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.REF_REPO }}:buildcache,mode=max
 
       - name: Start API Service
         shell: bash
