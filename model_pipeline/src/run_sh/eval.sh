@@ -31,10 +31,11 @@ VALIDATE_THRESHOLDS=true
 # =====================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$PROJECT_ROOT/.." && pwd)"
 
 PYTHON_SCRIPT="$PROJECT_ROOT/src/scripts/eval.py"
 CONFIG_PATH="$PROJECT_ROOT/src/config/logistic_regression.yaml"
-EVAL_DATASET="/home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo/data/test.parquet"
+EVAL_DATASET="$REPO_ROOT/data-pipeline/churn_feature_store/churn_features/feature_repo/data/test.parquet"
 PREDICTION_FOLDER="$PROJECT_ROOT/prediction_folder/prediction11.csv"
 
 # =====================
@@ -94,6 +95,7 @@ export PYTHONPATH="$PROJECT_ROOT"
 # =====================
 echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
+echo "REPO_ROOT: $REPO_ROOT"
 echo "PYTHON_SCRIPT: $PYTHON_SCRIPT"
 echo "CONFIG_PATH: $CONFIG_PATH"
 echo "EVAL_DATASET: $EVAL_DATASET"

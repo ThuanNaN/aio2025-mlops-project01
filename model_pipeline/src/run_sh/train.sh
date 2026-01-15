@@ -21,16 +21,18 @@ usage() {
 # =====================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$PROJECT_ROOT/.." && pwd)"
 
 echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
+echo "REPO_ROOT: $REPO_ROOT"
 
 # =====================
 # Defaults
 # =====================
 PYTHON_SCRIPT="$PROJECT_ROOT/src/scripts/train.py"
 CONFIG_PATH="$PROJECT_ROOT/src/config/logistic_regression.yaml"
-TRAINING_DATA_PATH="/home/mlops/Repository/aio2025-mlops-project01/data-pipeline/churn_feature_store/churn_features/feature_repo/data/processed_churn_data.parquet"
+TRAINING_DATA_PATH="$REPO_ROOT/data-pipeline/churn_feature_store/churn_features/feature_repo/data/processed_churn_data.parquet"
 
 TIMESTAMP="$(date +"%Y%m%d_%H%M%S")"
 RUN_NAME="baseline-logistic_regression_${TIMESTAMP}"
