@@ -4,24 +4,15 @@ Docstring for model_pipeline.src.scripts.train
 from pathlib import Path
 import argparse
 import pandas as pd
-import yaml
 from loguru import logger
-
-import pandas as pd
-import yaml
-from loguru import logger
-
 from sklearn.preprocessing import LabelEncoder
 
 from src.mlflow_utils.experiment_tracker import ExperimentTracker
 from src.model.xgboost_trainer import GenericBinaryClassifierTrainer
-from src.utility.helper import load_config
-import os
+from src.utility.helper import load_config, load_env
 
-os.environ["AWS_ACCESS_KEY_ID"] = "minio"
-os.environ["AWS_SECRET_ACCESS_KEY"] = "minio123"
-os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://localhost:9000"
+# Load environment variables from .env file
+load_env()
 
 
 

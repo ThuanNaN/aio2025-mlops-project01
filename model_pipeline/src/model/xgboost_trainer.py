@@ -225,14 +225,4 @@ class GenericBinaryClassifierTrainer:
             input_example=input_example.iloc[:3],
             code_paths=[str(SRC_PATH / 'src')]
         )
-    
-    # def load_model(self, model_uri: str):
-    #     """Load a trained model from MLflow"""
-    #     logger.info(f"Loading model from {model_uri=}")
-        
-        
-    #     self.model = mlflow.sklearn.load_model(model_uri) #type:ignore
-        
-    #     logger.info("Model loaded successfully")
-
 

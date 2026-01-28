@@ -3,14 +3,12 @@ Docstring for model_pipeline.src.scripts.register_model
 """
 import argparse
 from loguru import logger
-import os
-from src.mlflow_utils.model_registry import ModelRegistry
-from src.utility.helper import load_config
 
-os.environ["AWS_ACCESS_KEY_ID"] = "minio"
-os.environ["AWS_SECRET_ACCESS_KEY"] = "minio123"
-os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://localhost:9000"
+from src.mlflow_utils.model_registry import ModelRegistry
+from src.utility.helper import load_config, load_env
+
+# Load environment variables from .env file
+load_env()
 
 def main():
     parser = argparse.ArgumentParser(description="Manage model registry")

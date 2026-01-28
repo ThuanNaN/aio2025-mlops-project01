@@ -69,37 +69,3 @@ if __name__ == "__main__":
         features=FEATURES,
     ).to_df()
     print(df)
-
-
-# from feast import FeatureStore
-# import pandas as pd
-# import os
-
-# project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# repo_path = os.path.join(project_root, "churn_feature_store", "churn_features", "feature_repo")
-
-# store = FeatureStore(repo_path=repo_path)
-
-# entity_rows = [{"customer_id": i} for i in range(2, 40)]
-
-# FEATURES = [
-#     # ---------- customer_demographics ----------
-#     "customer_demographics:age",
-#     "customer_demographics:gender",
-#     "customer_demographics:tenure_months",
-#     "customer_demographics:subscription_type",
-#     "customer_demographics:contract_length",
-#     # ---------- customer_behavior ----------
-#     "customer_behavior:usage_frequency",
-#     "customer_behavior:support_calls",
-#     "customer_behavior:payment_delay_days",
-#     "customer_behavior:total_spend",
-#     "customer_behavior:last_interaction_days",
-# ]
-
-# df = store.get_online_features(
-#     entity_rows=entity_rows,
-#     features=FEATURES,
-# ).to_df()
-
-# print(df)
